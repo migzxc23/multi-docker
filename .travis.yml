@@ -4,21 +4,21 @@ services:
   - docker
 
 before_install:
-  - docker build -t migzxc23/react-test -f ./client/Dockerfile.dev ./client
+  - docker build -t miguel/react-test -f ./client/Dockerfile.dev ./client
 script:
-  - docker run -e CI=true migzxc23/react-test npm test
+  - docker run -e CI=true miguel/react-test npm test
 
 after_success:
-  - docker build -t migzxc23/multi-client ./client
-  - docker build -t migzxc23/multi-nginx ./nginx
-  - docker build -t migzxc23/multi-server ./server
-  - docker build -t migzxc23/multi-worker ./worker
+  - docker build -t miguel/multi-client ./client
+  - docker build -t miguel/multi-nginx ./nginx
+  - docker build -t miguel/multi-server ./server
+  - docker build -t miguel/multi-worker ./worker
   # Login to the Docker CLI
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
   # Take thos images and push them to Docker hub.
-  - docker push migzxc23/multi-client
-  - docker push migzxc23/multi-nginx
-  - docker push migzxc23/multi-server
-  - docker push migzxc23/multi-worker
+  - docker push miguel/multi-client
+  - docker push miguel/multi-nginx
+  - docker push miguel/multi-server
+  - docker push miguel/multi-worker
 
 
