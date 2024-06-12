@@ -1,8 +1,9 @@
 sudo: required
+language: generic
 services:
   - docker
 
-before-install:
+before_install:
   - docker build -t migzxc23/react-test -f ./client/Dockerfile.dev ./client
 
 script:
