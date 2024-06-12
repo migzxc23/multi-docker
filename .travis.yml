@@ -20,5 +20,3 @@ after_success:
   - docker push miguel/multi-nginx
   - docker push miguel/multi-server
   - docker push miguel/multi-worker
-
-
