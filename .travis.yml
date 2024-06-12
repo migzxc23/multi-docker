@@ -1,0 +1,16 @@
+sudo: required
+services:
+  - docker
+
+before-install:
+  - docker build -t mizxc23/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true migzxc23/react-test npm test
+
+after_success:
+  - docker build -t migzxc23/multi-client ./client
+  - docker build -t migzxc23/multi-nginx ./nginx
+  - docker build -t migzxc23/multi-server ./server
+  - docker build -t migzxc23/multi-worker ./worker
+
