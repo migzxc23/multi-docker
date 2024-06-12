@@ -13,4 +13,12 @@ after_success:
   - docker build -t migzxc23/multi-nginx ./nginx
   - docker build -t migzxc23/multi-server ./server
   - docker build -t migzxc23/multi-worker ./worker
+  # Login to the Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take thos images and push them to Docker hub.
+  - docker push migzxc23/multi-client
+  - docker push migzxc23/multi-nginx
+  - docker push migzxc23/multi-server
+  - docker push migzxc23/multi-worker
+
 
