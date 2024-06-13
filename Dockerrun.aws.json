@@ -1,52 +1,52 @@
 {
-    "AWSEBDockerrunVersion": "1",
+    "AWSEBDockerrunVersion": "2",
     "containerDefinitions": [
-        {
-            "name": "client",
-            "image": "migzxc23/multi-client",
-            "memory": 128,
-            "essential": true,
-            "portMappings": [
-                {
-                    "hostPort": 3050,
-                    "containerPort": 3050
-                }
-            ],
-            "ports": [3050]
-        },
-        {
-            "name": "server",
-            "image": "migzxc23/multi-server",
-            "memory": 128,
-            "essential": true,
-            "portMappings": [
-                {
-                    "hostPort": 8001,
-                    "containerPort": 8001
-                }
-            ],
-            "ports": [8001]
-        },
-        {
-            "name": "worker",
-            "image": "migzxc23/multi-worker",
-            "memory": 128,
-            "essential": true,
-            "ports": []
-        },
-        {
-            "name": "nginx",
-            "image": "migzxc23/multi-nginx",
-            "memory": 128,
-            "essential": true,
-            "portMappings": [
-                {
-                    "hostPort": 80,
-                    "containerPort": 80
-                }
-            ],
-            "links": ["client", "server"],
-            "ports": [80]
-        }
+      {
+        "name": "client",
+        "image": "migzxc23/multi-client",
+        "memory": 128,
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": 3000,
+            "containerPort": 3000
+          }
+        ]
+      },
+      {
+        "name": "server",
+        "image": "migzxc23/multi-server",
+        "memory": 128,
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": 8080,
+            "containerPort": 8080
+          }
+        ]
+      },
+      {
+        "name": "worker",
+        "image": "migzxc23/multi-worker",
+        "memory": 128,
+        "essential": true
+      },
+      {
+        "name": "nginx",
+        "image": "migzxc23/multi-nginx",
+        "memory": 128,
+        "essential": true,
+        "portMappings": [
+          {
+            "hostPort": 80,
+            "containerPort": 80
+          }
+        ],
+        "links": [
+          "client",
+          "server"
+        ]
+      }
     ]
-}
+  }
+  
