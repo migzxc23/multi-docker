@@ -1,0 +1,62 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image for tests
+        run: docker build -t migzxc23/react-test -f ./client/Dockerfile.dev ./client
+
+      - name: Run tests
+        run: docker run -e CI=true migzxc23/react-test npm test
+
+      - name: Build Docker images
+        run: |
+          docker build -t migzxc23/multi-client ./client
+          docker build -t migzxc23/multi-nginx ./nginx
+          docker build -t migzxc23/multi-server ./server
+          docker build -t migzxc23/multi-worker ./worker
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_ID }}" --password-stdin
+
+      - name: Push Docker images
+        run: |
+          docker push migzxc23/multi-client
+          docker push migzxc23/multi-nginx
+          docker push migzxc23/multi-server
+          docker push migzxc23/multi-worker
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+        run: |
+          zip -r deploy.zip .
+          aws configure set default.region ap-southeast-2
+          aws elasticbeanstalk create-application-version --application-name multi-docker --version-label $GITHUB_SHA --source-bundle S3Bucket=elasticbeanstalk-ap-southeast-2-767397956932,S3Key=docker-multi/deploy.zip
+          aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label $GITHUB_SHA
