@@ -1,4 +1,4 @@
-name: Deploy to Elastic Beanstalk
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,50 +6,59 @@ on:
       - master
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_ID }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build and test Docker image
+      run: |
+        docker build -t migzxc23/react-test -f ./client/Dockerfile.dev ./client
+        docker run -e CI=true migzxc23/react-test npm test
+    
+    - name: Build Docker images
+      run: |
+        docker build -t migzxc23/multi-client ./client
+        docker build -t migzxc23/multi-nginx ./nginx
+        docker build -t migzxc23/multi-server ./server
+        docker build -t migzxc23/multi-worker ./worker
+    
+    - name: Push Docker images
+      run: |
+        docker push migzxc23/multi-client
+        docker push migzxc23/multi-nginx
+        docker push migzxc23/multi-server
+        docker push migzxc23/multi-worker
+
   deploy:
     runs-on: ubuntu-latest
-
-    services:
-      docker:
+    needs: build
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_ID }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push client image
-        run: |
-          docker build -t migzxc23/multi-client -f./client/Dockerfile.dev./client
-          docker push migzxc23/multi-client
-
-      - name: Build and push nginx image
-        run: |
-          docker build -t migzxc23/multi-nginx./nginx
-          docker push migzxc23/multi-nginx
-
-      - name: Build and push server image
-        run: |
-          docker build -t migzxc23/multi-server./server
-          docker push migzxc23/multi-server
-
-      - name: Build and push worker image
-        run: |
-          docker build -t migzxc23/multi-worker./worker
-          docker push migzxc23/multi-worker
-
-      - name: Deploy to Elastic Beanstalk
-        uses: aws-actions/beanstalk-deploy@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          region: ap-southeast-2
-          application-name: multi-docker
-          environment-name: Multi-docker-env
-          bucket-name: elasticbeanstalk-ap-southeast-2-767397956932
-          bucket-path: docker-multi
-          zip-file:.
+    - name: Set up AWS CLI
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+        aws-region: ap-southeast-2
+    
+    - name: Deploy to Elastic Beanstalk
+      run: |
+        zip -r deploy.zip .
+        aws s3 cp deploy.zip s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deploy.zip
+        aws elasticbeanstalk create-application-version --application-name multi-docker --version-label $GITHUB_SHA --source-bundle S3Bucket="elasticbeanstalk-ap-southeast-2-767397956932",S3Key="docker-multi/deploy.zip"
+        aws elasticbeanstalk update-environment --application-name multi-docker --environment-name Multi-docker-env --version-label $GITHUB_SHA
