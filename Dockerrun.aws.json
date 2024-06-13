@@ -5,13 +5,25 @@
             "name": "client",
             "image": "migzxc23/multi-client",
             "memory": 128,
-            "essential": true
+            "essential": true,
+            "portMappings": [
+                {
+                    "hostPort": 3050,
+                    "containerPort": 3050
+                }
+            ]
         },
         {
             "name": "server",
             "image": "migzxc23/multi-server",
             "memory": 128,
-            "essential": true
+            "essential": true,
+            "portMappings": [
+                {
+                    "hostPort": 8001,
+                    "containerPort": 8001
+                }
+            ]
         },
         {
             "name": "worker",
