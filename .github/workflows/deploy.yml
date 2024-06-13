@@ -57,7 +57,7 @@ jobs:
       - name: Deploy to Elastic Beanstalk
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           aws configure set default.region ap-southeast-2
           aws s3 cp deploy.zip s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deploy.zip
@@ -68,4 +68,3 @@ jobs:
           aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label "${GITHUB_SHA}"
           echo "Updated environment Multi-docker-env to version ${GITHUB_SHA}."
           aws elasticbeanstalk describe-environments --environment-names Multi-docker-env --query "Environments[0].Status"
-          
