@@ -29,8 +29,8 @@
             "name": "worker",
             "image": "migzxc23/multi-worker",
             "memory": 128,
-            "essential": true,
-            "portMappings": []
+            "essential": true
+            
         },
         {
             "name": "nginx",
