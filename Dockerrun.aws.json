@@ -11,7 +11,8 @@
                     "hostPort": 3050,
                     "containerPort": 3050
                 }
-            ]
+            ],
+            "ports": [3050]
         },
         {
             "name": "server",
@@ -23,14 +24,15 @@
                     "hostPort": 8001,
                     "containerPort": 8001
                 }
-            ]
+            ],
+            "ports": [8001]
         },
         {
             "name": "worker",
             "image": "migzxc23/multi-worker",
             "memory": 128,
-            "essential": true
-            
+            "essential": true,
+            "ports": []
         },
         {
             "name": "nginx",
@@ -43,7 +45,8 @@
                     "containerPort": 80
                 }
             ],
-            "links": ["client", "server"]
+            "links": ["client", "server"],
+            "ports": [80]
         }
     ]
 }
