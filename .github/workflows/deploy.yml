@@ -47,6 +47,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -54,43 +55,46 @@ jobs:
       - name: Zip deployment files
         run: zip -r deploy.zip Dockerrun.aws.json .ebextensions
 
-      - name: Deploy to Elastic Beanstalk
+      - name: Upload to S3
+        run: aws s3 cp deploy.zip s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deploy.zip
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
           AWS_REGION: ap-southeast-2
-          APPLICATION_NAME: multi-docker
-          ENVIRONMENT_NAME: Multi-docker-env
-          VERSION_LABEL: ${{ github.sha }}
+
+      - name: Create new application version
+        run: aws elasticbeanstalk create-application-version --application-name multi-docker --version-label ${{ github.sha }} --source-bundle S3Bucket=elasticbeanstalk-ap-southeast-2-767397956932,S3Key=docker-multi/deploy.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ap-southeast-2
+
+      - name: Update environment
+        run: aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label ${{ github.sha }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ap-southeast-2
+
+      - name: Wait for environment to update
+        run: aws elasticbeanstalk wait environment-updated --environment-name Multi-docker-env
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ap-southeast-2
+        timeout-minutes: 30
+
+      - name: Check environment status
         run: |
-          aws configure set default.region $AWS_REGION
-          aws s3 cp deploy.zip s3://elasticbeanstalk-$AWS_REGION-767397956932/docker-multi/deploy.zip
-          echo "Deployment zip file uploaded to S3."
-
-          # Create new application version
-          aws elasticbeanstalk create-application-version --application-name $APPLICATION_NAME --version-label $VERSION_LABEL --source-bundle S3Bucket=elasticbeanstalk-$AWS_REGION-767397956932,S3Key=docker-multi/deploy.zip
-          echo "Created application version $VERSION_LABEL."
-
-          # Update environment with new version
-          aws elasticbeanstalk update-environment --environment-name $ENVIRONMENT_NAME --version-label $VERSION_LABEL
-          echo "Updated environment $ENVIRONMENT_NAME to version $VERSION_LABEL."
-
-          # Wait for environment to finish updating
-          aws elasticbeanstalk wait environment-updated --environment-name $ENVIRONMENT_NAME
-          echo "Environment $ENVIRONMENT_NAME updated successfully."
-
-          # Check environment status
-          env_status=$(aws elasticbeanstalk describe-environments --environment-names $ENVIRONMENT_NAME --query "Environments[0].Status" --output text)
-
-          # If deployment fails, rollback to previous version
+          env_status=$(aws elasticbeanstalk describe-environments --environment-names Multi-docker-env --query "Environments[0].Status" --output text)
           if [ "$env_status" != "Ready" ]; then
             echo "Deployment failed. Rolling back to previous version ${PREVIOUS_VERSION}."
-            aws elasticbeanstalk update-environment --environment-name $ENVIRONMENT_NAME --version-label "${PREVIOUS_VERSION}"
+            aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label "${PREVIOUS_VERSION}"
+            aws elasticbeanstalk wait environment-updated --environment-name Multi-docker-env
             echo "Rolled back to previous version ${PREVIOUS_VERSION}."
-
-            # Wait for rollback to complete
-            aws elasticbeanstalk wait environment-updated --environment-name $ENVIRONMENT_NAME
-
-            # Check environment status again
-            aws elasticbeanstalk describe-environments --environment-names $ENVIRONMENT_NAME --query "Environments[0].Status"
           fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_REGION: ap-southeast-2
+        timeout-minutes: 30
