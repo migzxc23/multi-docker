@@ -1,0 +1,3 @@
+user: postgres
+pswd: postgrespassword
+fibdatabase
