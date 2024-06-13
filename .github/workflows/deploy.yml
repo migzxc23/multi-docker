@@ -61,3 +61,11 @@ jobs:
         run: |
           aws configure set default.region ap-southeast-2
           aws s3 cp deploy.zip s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deploy.zip
+          echo "Deployment zip file uploaded to S3."
+          aws s3 ls s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deploy.zip
+          aws elasticbeanstalk create-application-version --application-name multi-docker --version-label "${GITHUB_SHA}" --source-bundle S3Bucket=elasticbeanstalk-ap-southeast-2-767397956932,S3Key=docker-multi/deploy.zip
+          echo "Created application version ${GITHUB_SHA}."
+          aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label "${GITHUB_SHA}"
+          echo "Updated environment Multi-docker-env to version ${GITHUB_SHA}."
+          aws elasticbeanstalk describe-environments --environment-names Multi-docker-env --query "Environments[0].Status"
+          
