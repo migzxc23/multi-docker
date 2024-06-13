@@ -59,13 +59,27 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
           GITHUB_SHA: ${{ github.sha }}
+          PREVIOUS_VERSION: ${{ github.event.pull_request.previous_version }}
         run: |
           aws configure set default.region ap-southeast-2
           aws s3 cp deployment.zip s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deployment.zip
           echo "Deployment zip file uploaded to S3."
           aws s3 ls s3://elasticbeanstalk-ap-southeast-2-767397956932/docker-multi/deployment.zip
-          aws elasticbeanstalk create-application-version --application-name multi-docker --version-label '${GITHUB_SHA}' --source-bundle S3Bucket=elasticbeanstalk-ap-southeast-2-767397956932,S3Key=docker-multi/deployment.zip
+
+          # Create new application version
+          aws elasticbeanstalk create-application-version --application-name multi-docker --version-label "${GITHUB_SHA}" --source-bundle S3Bucket=elasticbeanstalk-ap-southeast-2-767397956932,S3Key=docker-multi/deployment.zip
           echo "Created application version ${GITHUB_SHA}."
-          aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label '${GITHUB_SHA}'
+
+          # Update environment with new version
+          aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label "${GITHUB_SHA}"
           echo "Updated environment Multi-docker-env to version ${GITHUB_SHA}."
+
+          # Check environment status
           aws elasticbeanstalk describe-environments --environment-names Multi-docker-env --query "Environments[0].Status"
+
+          # If deployment fails, rollback to previous version
+          if [ $? -ne 0 ]; then
+            echo "Deployment failed. Rolling back to previous version ${PREVIOUS_VERSION}."
+            aws elasticbeanstalk update-environment --environment-name Multi-docker-env --version-label "${PREVIOUS_VERSION}"
+            echo "Rolled back to previous version ${PREVIOUS_VERSION}."
+          fi
