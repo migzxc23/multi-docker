@@ -8,10 +8,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     services:
       docker:
-        docker:
-          image: docker:latest
 
     steps:
       - name: Checkout code
@@ -25,22 +24,22 @@ jobs:
 
       - name: Build and push client image
         run: |
-          docker build -t migzxc23/multi-client -f ./client/Dockerfile.dev ./client
+          docker build -t migzxc23/multi-client -f./client/Dockerfile.dev./client
           docker push migzxc23/multi-client
 
       - name: Build and push nginx image
         run: |
-          docker build -t migzxc23/multi-nginx ./nginx
+          docker build -t migzxc23/multi-nginx./nginx
           docker push migzxc23/multi-nginx
 
       - name: Build and push server image
         run: |
-          docker build -t migzxc23/multi-server ./server
+          docker build -t migzxc23/multi-server./server
           docker push migzxc23/multi-server
 
       - name: Build and push worker image
         run: |
-          docker build -t migzxc23/multi-worker ./worker
+          docker build -t migzxc23/multi-worker./worker
           docker push migzxc23/multi-worker
 
       - name: Deploy to Elastic Beanstalk
@@ -53,4 +52,4 @@ jobs:
           environment-name: Multi-docker-env
           bucket-name: elasticbeanstalk-ap-southeast-2-767397956932
           bucket-path: docker-multi
-          zip-file: .
+          zip-file:.
